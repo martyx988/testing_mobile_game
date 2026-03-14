@@ -19,10 +19,15 @@ Milestone 3: Compose game UI and player interaction flow
 - Restart and win/loss UI states are visible and understandable
 
 ## Progress Log
-- Task planned
+- Replaced the placeholder scaffold view with a playable classic game screen
+- Added an observable controller layer that wires taps, long-presses, and restart flows to the game engine
+- Added a retro-inspired portrait layout with status cards, board grid, and restart actions
+- Added controller tests so UI input flow remains covered without depending on a connected device
 
 ## Validation Results
-- Not started
+- `./gradlew test -Pandroid.builder.sdkDownload=false` passed
+- `./gradlew lint -Pandroid.builder.sdkDownload=false` passed
+- `./gradlew assembleDebug -Pandroid.builder.sdkDownload=false` passed
 
 ## Final Summary
-- Pending implementation
+- The app now launches into a playable classic Minesweeper screen with tap and long-press controls

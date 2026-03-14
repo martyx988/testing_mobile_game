@@ -6,6 +6,7 @@
 - Build, unit-test, and lint validation have been completed for the scaffold task
 - Deterministic board generation for classic mode has been implemented
 - Classic gameplay reveal, flag, win, loss, and restart rules have been implemented
+- A playable Compose game screen is now wired to the classic engine
 
 ## Approved Decisions
 - Native Android app using Kotlin and Jetpack Compose
@@ -16,7 +17,8 @@
 ## Current Milestone
 - Milestone 1 complete: Android project scaffold and build baseline
 - Milestone 2 complete: classic game engine and state rules
-- Next active task: Compose game screen and interaction flow
+- Milestone 3 complete: Compose game screen and interaction flow
+- Next active task: session resume and local storage
 
 ## Validation Status
 - Unit test harness added
@@ -25,8 +27,10 @@
 - `assembleDebug` passed and produced a debug APK
 - Deterministic board-generation unit tests pass
 - Classic gameplay engine unit tests pass
+- UI controller tests pass
+- Playable UI build, lint, and debug APK assembly pass
 
 ## Follow-Ups
 - Add harder classic difficulties after v1
 - Finalize the exact `Trap Tiles` rule contract before coding begins
-- Wire the game engine into the Compose UI next
+- Persist unfinished matches and restore them with a resume prompt next

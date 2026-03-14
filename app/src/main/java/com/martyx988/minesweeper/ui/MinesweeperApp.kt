@@ -1,35 +1,59 @@
 package com.martyx988.minesweeper.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.martyx988.minesweeper.domain.AppScaffoldConfig
+import com.martyx988.minesweeper.domain.CellHazard
+import com.martyx988.minesweeper.domain.CellVisibility
+import com.martyx988.minesweeper.domain.ClassicBoardPresets
+import com.martyx988.minesweeper.domain.Coordinate
+import com.martyx988.minesweeper.domain.GameCellState
 import com.martyx988.minesweeper.domain.GameMode
+import com.martyx988.minesweeper.domain.MatchStatus
 import com.martyx988.minesweeper.ui.theme.MinesweeperTheme
+import kotlin.random.Random
 
 @Composable
 internal fun MinesweeperApp() {
+    val controller = remember {
+        ClassicGameController(
+            initialConfig = ClassicBoardPresets.easy(seed = Random.nextLong()),
+            nextSeed = { Random.nextLong() },
+        )
+    }
+
     MinesweeperTheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
@@ -43,12 +67,13 @@ internal fun MinesweeperApp() {
                         .fillMaxSize()
                         .padding(padding)
                         .statusBarsPadding()
-                        .padding(horizontal = 20.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                        .padding(horizontal = 18.dp, vertical = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     HeaderCard()
-                    ModeCard()
-                    PlaceholderBoardCard()
+                    StatusPanel(controller = controller)
+                    GameBoardCard(controller = controller)
+                    FooterPanel(controller = controller)
                 }
             }
         }
@@ -58,136 +83,282 @@ internal fun MinesweeperApp() {
 @Composable
 private fun HeaderCard() {
     Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        ),
-        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = RoundedCornerShape(28.dp),
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
                 text = AppScaffoldConfig.appTitle,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
+                modifier = Modifier.testTag("app_title"),
             )
             Text(
-                text = "Retro-inspired, mobile-first puzzle play.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = "Scaffold milestone: foundation, theming, and test baseline are ready.",
+                text = "Classic Easy is live now. Long-press cells to place flags and keep Trap Tiles reserved for the next milestone.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        }
-    }
-}
-
-@Composable
-private fun ModeCard() {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
-        shape = RoundedCornerShape(24.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Text(
-                text = "Planned Modes",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
-            )
-            AppScaffoldConfig.supportedModes.forEach { mode ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = when (mode) {
-                            GameMode.CLASSIC_EASY -> "Classic Easy"
-                            GameMode.TRAP_TILES -> "Trap Tiles"
-                        },
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-                    Text(
-                        text = if (mode == GameMode.CLASSIC_EASY) {
-                            "Core"
-                        } else {
-                            "Variant"
-                        },
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ModeBadge(label = "Classic Easy", emphasis = true)
+                ModeBadge(label = "Trap Tiles Soon", emphasis = false)
             }
         }
     }
 }
 
 @Composable
-private fun PlaceholderBoardCard() {
+private fun ModeBadge(
+    label: String,
+    emphasis: Boolean,
+) {
+    Box(
+        modifier = Modifier
+            .background(
+                color = if (emphasis) {
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                } else {
+                    MaterialTheme.colorScheme.surface
+                },
+                shape = RoundedCornerShape(999.dp),
+            )
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = if (emphasis) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun StatusPanel(controller: ClassicGameController) {
+    val gameState = controller.gameState
+    val flaggedCount = gameState.allCellStates.count { it.visibility == CellVisibility.FLAGGED }
+    val remainingMines = gameState.board.config.mineCount - flaggedCount
+    val statusTitle = when (gameState.status) {
+        MatchStatus.ACTIVE -> "Field active"
+        MatchStatus.WON -> "Field cleared"
+        MatchStatus.LOST -> "Mine triggered"
+    }
+    val statusBody = when (gameState.status) {
+        MatchStatus.ACTIVE -> "Tap to reveal, long-press to flag."
+        MatchStatus.WON -> "You cleared every safe tile."
+        MatchStatus.LOST -> "All mines are shown. Restart for a new board."
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        StatCard(
+            modifier = Modifier.fillMaxWidth(),
+            label = "Status",
+            value = statusTitle,
+            supporting = statusBody,
+        )
+    }
+    Spacer(modifier = Modifier.height(12.dp))
+    StatCard(
+        modifier = Modifier.fillMaxWidth(),
+        label = "Mines Left",
+        value = remainingMines.toString(),
+        supporting = "Flags: $flaggedCount",
+    )
+}
+
+@Composable
+private fun StatCard(
+    modifier: Modifier = Modifier,
+    label: String,
+    value: String,
+    supporting: String,
+) {
     Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(24.dp),
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
-                text = "Build Baseline",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
             )
             Text(
-                text = "Next tasks will add the board engine, reveal rules, resume state, and the experimental mode.",
+                text = value,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = supporting,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        color = MaterialTheme.colorScheme.inverseOnSurface,
-                        shape = RoundedCornerShape(20.dp),
-                    )
-                    .padding(18.dp),
+        }
+    }
+}
+
+@Composable
+private fun GameBoardCard(controller: ClassicGameController) {
+    val gameState = controller.gameState
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(28.dp),
+    ) {
+        BoxWithConstraints {
+            val cellSpacing = 8.dp
+            val columns = gameState.board.columns
+            val totalSpacing = cellSpacing * (columns - 1)
+            val cellSize = (maxWidth - totalSpacing) / columns
+
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    repeat(3) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            for (cellIndex in 0 until 5) {
-                                Box(
-                                    modifier = Modifier
-                                        .height(34.dp)
-                                        .weight(1f)
-                                        .background(
-                                            color = MaterialTheme.colorScheme.surfaceBright,
-                                            shape = RoundedCornerShape(10.dp),
-                                        ),
-                                )
-                            }
+                Text(
+                    text = "Board",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                gameState.board.cells.forEach { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(cellSpacing),
+                    ) {
+                        row.forEach { cell ->
+                            val cellState = gameState.cellStateAt(cell.coordinate)
+                            BoardTile(
+                                state = cellState,
+                                onReveal = { controller.reveal(cell.coordinate) },
+                                onToggleFlag = { controller.toggleFlag(cell.coordinate) },
+                                modifier = Modifier.size(cellSize),
+                            )
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun BoardTile(
+    state: GameCellState,
+    onReveal: () -> Unit,
+    onToggleFlag: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val background = when (state.visibility) {
+        CellVisibility.HIDDEN -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.16f)
+        CellVisibility.FLAGGED -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.28f)
+        CellVisibility.REVEALED -> MaterialTheme.colorScheme.surfaceVariant
+    }
+    val contentColor = when {
+        state.isDetonated -> MaterialTheme.colorScheme.error
+        state.visibility == CellVisibility.FLAGGED -> MaterialTheme.colorScheme.secondary
+        state.cell.hazard == CellHazard.MINE -> MaterialTheme.colorScheme.primary
+        state.cell.adjacentMineCount > 0 -> numberColor(state.cell.adjacentMineCount)
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Box(
+        modifier = modifier
+            .semantics {
+                contentDescription = tileDescription(state)
+            }
+            .testTag("tile_${state.cell.coordinate.row}_${state.cell.coordinate.column}")
+            .combinedClickable(
+                onClick = onReveal,
+                onLongClick = onToggleFlag,
+            )
+            .background(
+                color = background,
+                shape = RoundedCornerShape(14.dp),
+            )
+            .height(40.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = tileLabel(state),
+            color = contentColor,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun FooterPanel(controller: ClassicGameController) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
             Button(
-                onClick = {},
+                onClick = { controller.restart() },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(text = "Scaffold Ready")
+                Text("New Board")
+            }
+            OutlinedButton(
+                onClick = { controller.restartWithCurrentSeed() },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Replay Seed")
             }
         }
     }
+
+    Spacer(modifier = Modifier.height(4.dp))
+
+    Text(
+        text = "Seed ${controller.gameState.board.config.seed}  |  Long-press to place a flag",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+private fun tileLabel(state: GameCellState): String = when (state.visibility) {
+    CellVisibility.HIDDEN -> ""
+    CellVisibility.FLAGGED -> "F"
+    CellVisibility.REVEALED -> when {
+        state.cell.hazard == CellHazard.MINE -> "X"
+        state.cell.adjacentMineCount == 0 -> ""
+        else -> state.cell.adjacentMineCount.toString()
+    }
+}
+
+private fun tileDescription(state: GameCellState): String {
+    val coordinate = "row ${state.cell.coordinate.row + 1}, column ${state.cell.coordinate.column + 1}"
+    return when (state.visibility) {
+        CellVisibility.HIDDEN -> "Hidden tile at $coordinate"
+        CellVisibility.FLAGGED -> "Flagged tile at $coordinate"
+        CellVisibility.REVEALED -> when {
+            state.cell.hazard == CellHazard.MINE && state.isDetonated -> "Detonated mine at $coordinate"
+            state.cell.hazard == CellHazard.MINE -> "Mine at $coordinate"
+            state.cell.adjacentMineCount == 0 -> "Empty revealed tile at $coordinate"
+            else -> "Revealed tile at $coordinate with ${state.cell.adjacentMineCount} nearby mines"
+        }
+    }
+}
+
+@Composable
+private fun numberColor(number: Int) = when (number) {
+    1 -> MaterialTheme.colorScheme.primary
+    2 -> MaterialTheme.colorScheme.secondary
+    3 -> MaterialTheme.colorScheme.tertiary
+    else -> MaterialTheme.colorScheme.onSurface
 }
 
 @Preview(showBackground = true)
