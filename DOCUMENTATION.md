@@ -2,7 +2,8 @@
 
 ## Status
 - Repository planning is being repurposed toward an Android Minesweeper app
-- No application code has been added yet
+- Android project scaffold has been added
+- Build, unit-test, and lint validation have been completed for the scaffold task
 
 ## Approved Decisions
 - Native Android app using Kotlin and Jetpack Compose
@@ -11,15 +12,16 @@
 - Data remains local-only with no monetization
 
 ## Current Milestone
-- Documentation bootstrap
-- Implementation task breakdown created for upcoming milestones
+- Milestone 1 complete: Android project scaffold and build baseline
+- Next active task: game domain model and board generation
 
 ## Validation Status
-- Planning complete
-- Implementation not started
-- Task backlog documented for future execution
+- Unit test harness added
+- `test` passed
+- `lint` passed with non-blocking dependency freshness warnings
+- `assembleDebug` passed and produced a debug APK
 
 ## Follow-Ups
 - Add harder classic difficulties after v1
 - Finalize the exact `Trap Tiles` rule contract before coding begins
-- Scaffold the Android project and begin Milestone 1 execution
+- Implement deterministic board generation and adjacency counting next
