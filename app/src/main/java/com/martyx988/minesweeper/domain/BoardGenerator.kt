@@ -16,22 +16,28 @@ object BoardGenerator {
         val mineCoordinates = coordinates
             .take(config.mineCount)
             .toSet()
+        val trapCoordinates = coordinates
+            .drop(config.mineCount)
+            .take(config.trapCount)
+            .toSet()
+        val countedHazards = mineCoordinates + trapCoordinates
 
         val cells = List(config.rows) { row ->
             List(config.columns) { column ->
                 val coordinate = Coordinate(row, column)
                 val hazard = when {
                     coordinate in mineCoordinates -> CellHazard.MINE
+                    coordinate in trapCoordinates -> CellHazard.TRAP
                     else -> CellHazard.NONE
                 }
 
-                val adjacentMineCount = if (hazard == CellHazard.MINE) {
+                val adjacentMineCount = if (hazard != CellHazard.NONE) {
                     0
                 } else {
                     coordinate.neighbors(
                         rows = config.rows,
                         columns = config.columns,
-                    ).count { neighbor -> neighbor in mineCoordinates }
+                    ).count { neighbor -> neighbor in countedHazards }
                 }
 
                 BoardCell(
@@ -61,4 +67,3 @@ object BoardGenerator {
         }
     }
 }
-

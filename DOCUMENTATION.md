@@ -9,6 +9,7 @@
 - A playable Compose game screen is now wired to the classic engine
 - Active matches can now be saved locally and resumed from an app-launch prompt
 - Local stats, achievements, theme choice, and haptics settings now persist across launches
+- Trap Tiles is now a playable experimental mode with its own deterministic board setup
 
 ## Approved Decisions
 - Native Android app using Kotlin and Jetpack Compose
@@ -21,7 +22,8 @@
 - Milestone 2 complete: classic game engine and state rules
 - Milestone 3 complete: Compose game screen and interaction flow
 - Milestone 4 complete: persistence, resume flow, settings, and themes
-- Next active task: Trap Tiles experimental mode
+- Milestone 5 complete: Trap Tiles experimental mode
+- Next active task: tutorial, accessibility, and release polish
 
 ## Validation Status
 - Unit test harness added
@@ -34,8 +36,8 @@
 - Playable UI build, lint, and debug APK assembly pass
 - Snapshot codec and resume-controller tests pass
 - Player profile, achievement, theme, and settings tests pass
+- Trap Tiles engine and mode-switch tests pass
 
 ## Follow-Ups
 - Add harder classic difficulties after v1
-- Finalize the exact `Trap Tiles` rule contract before coding begins
-- Add the fixed experimental Trap Tiles mode next
+- Finish the help flow, accessibility pass, and final polish next

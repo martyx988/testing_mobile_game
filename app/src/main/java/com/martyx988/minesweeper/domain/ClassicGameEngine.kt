@@ -81,7 +81,9 @@ object ClassicGameEngine {
         }
 
         return when (current.cell.hazard) {
-            CellHazard.MINE -> loseGame(state, detonatedAt = coordinate)
+            CellHazard.MINE,
+            CellHazard.TRAP,
+            -> loseGame(state, detonatedAt = coordinate)
             CellHazard.NONE -> {
                 val updatedCells = state.allCellStates
                     .associateBy { it.cell.coordinate }
@@ -94,7 +96,7 @@ object ClassicGameEngine {
                 )
 
                 val nextStatus = if (updatedCells.values
-                        .filter { it.cell.hazard != CellHazard.MINE }
+                        .filter { it.cell.hazard == CellHazard.NONE }
                         .all { it.visibility == CellVisibility.REVEALED }
                 ) {
                     MatchStatus.WON
@@ -107,7 +109,6 @@ object ClassicGameEngine {
                     cellsByCoordinate = updatedCells,
                 )
             }
-            CellHazard.TRAP -> state
         }
     }
 
@@ -188,7 +189,9 @@ object ClassicGameEngine {
             .associateBy { it.cell.coordinate }
             .mapValues { (_, gameCell) ->
                 when (gameCell.cell.hazard) {
-                    CellHazard.MINE -> gameCell.copy(
+                    CellHazard.MINE,
+                    CellHazard.TRAP,
+                    -> gameCell.copy(
                         visibility = CellVisibility.REVEALED,
                         isDetonated = gameCell.cell.coordinate == detonatedAt,
                     )
@@ -245,6 +248,7 @@ object ClassicGameSnapshotCodec {
             snapshot.config.rows,
             snapshot.config.columns,
             snapshot.config.mineCount,
+            snapshot.config.trapCount,
             snapshot.config.seed,
             snapshot.config.mode.name,
             snapshot.status.name,
@@ -270,15 +274,16 @@ object ClassicGameSnapshotCodec {
         return try {
             val lines = rawValue.lines()
             val headerValues = lines.first().split(headerSeparator)
-            require(headerValues.size == 7)
+            require(headerValues.size == 8)
             require(headerValues.first() == headerPrefix)
 
             val config = BoardConfig(
                 rows = headerValues[1].toInt(),
                 columns = headerValues[2].toInt(),
                 mineCount = headerValues[3].toInt(),
-                seed = headerValues[4].toLong(),
-                mode = GameMode.valueOf(headerValues[5]),
+                trapCount = headerValues[4].toInt(),
+                seed = headerValues[5].toLong(),
+                mode = GameMode.valueOf(headerValues[6]),
             )
 
             val cells = lines.drop(1)
@@ -301,7 +306,7 @@ object ClassicGameSnapshotCodec {
             SnapshotDecodeResult.Success(
                 snapshot = ClassicGameSnapshot(
                     config = config,
-                    status = MatchStatus.valueOf(headerValues[6]),
+                    status = MatchStatus.valueOf(headerValues[7]),
                     cells = cells,
                 ),
             )

@@ -11,11 +11,12 @@ import com.martyx988.minesweeper.domain.CellVisibility
 import com.martyx988.minesweeper.domain.ClassicBoardPresets
 import com.martyx988.minesweeper.domain.ClassicGameEngine
 import com.martyx988.minesweeper.domain.ClassicGameSnapshot
-import com.martyx988.minesweeper.domain.ClassicGameState
 import com.martyx988.minesweeper.domain.Coordinate
+import com.martyx988.minesweeper.domain.GameMode
 import com.martyx988.minesweeper.domain.MatchStatus
 import com.martyx988.minesweeper.domain.PlayerProfile
 import com.martyx988.minesweeper.domain.PlayerProfileManager
+import com.martyx988.minesweeper.domain.TrapTilesBoardPresets
 import kotlin.random.Random
 
 class ResumeGameController(
@@ -23,8 +24,9 @@ class ResumeGameController(
     private val profileStore: PlayerProfileStore,
     initialConfig: BoardConfig = ClassicBoardPresets.easy(seed = Random.nextLong()),
     private val nextSeed: () -> Long = { Random.nextLong() },
+    private val configFactory: (GameMode, Long) -> BoardConfig = ::defaultConfigForMode,
 ) {
-    private val baseConfig = initialConfig
+    private var currentMode: GameMode = initialConfig.mode
 
     var gameState by mutableStateOf(ClassicGameEngine.start(initialConfig))
         private set
@@ -69,18 +71,19 @@ class ResumeGameController(
     }
 
     fun restart() {
-        gameState = ClassicGameEngine.restart(gameState, nextSeed())
+        gameState = ClassicGameEngine.start(configFactory(currentMode, nextSeed()))
         syncSnapshotAfterInteraction()
     }
 
     fun restartWithCurrentSeed() {
-        gameState = ClassicGameEngine.start(baseConfig.copy(seed = gameState.board.config.seed))
+        gameState = ClassicGameEngine.start(configFactory(currentMode, gameState.board.config.seed))
         syncSnapshotAfterInteraction()
     }
 
     fun confirmResume() {
         val snapshot = pendingResumeSnapshot ?: return
         gameState = ClassicGameEngine.restore(snapshot)
+        currentMode = snapshot.config.mode
         pendingResumeSnapshot = null
         syncSnapshotAfterInteraction()
     }
@@ -104,6 +107,12 @@ class ResumeGameController(
         persistProfile()
     }
 
+    fun switchMode(mode: GameMode) {
+        currentMode = mode
+        gameState = ClassicGameEngine.start(configFactory(mode, nextSeed()))
+        syncSnapshotAfterInteraction()
+    }
+
     private fun syncSnapshotAfterInteraction() {
         when (gameState.status) {
             MatchStatus.ACTIVE -> storage.save(ClassicGameEngine.snapshot(gameState))
@@ -125,5 +134,15 @@ class ResumeGameController(
 
     private fun persistProfile() {
         profileStore.save(playerProfile)
+    }
+
+    private companion object {
+        fun defaultConfigForMode(
+            mode: GameMode,
+            seed: Long,
+        ): BoardConfig = when (mode) {
+            GameMode.CLASSIC_EASY -> ClassicBoardPresets.easy(seed)
+            GameMode.TRAP_TILES -> TrapTilesBoardPresets.standard(seed)
+        }
     }
 }

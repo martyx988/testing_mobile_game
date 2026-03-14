@@ -25,7 +25,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
@@ -80,7 +79,7 @@ internal fun MinesweeperApp() {
                         .padding(horizontal = 18.dp, vertical = 14.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
-                    HeaderCard()
+                    HeaderCard(controller = controller)
                     StatusPanel(controller = controller)
                     GameBoardCard(controller = controller)
                     ProfilePanel(controller = controller)
@@ -147,7 +146,7 @@ private fun ProfilePanel(controller: ResumeGameController) {
             )
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 profile.achievements.sortedBy { it.name }.forEach { achievement ->
-                    ModeBadge(label = achievementLabel(achievement), emphasis = false)
+                    AchievementBadge(label = achievementLabel(achievement))
                 }
                 if (profile.achievements.isEmpty()) {
                     Text(
@@ -180,7 +179,8 @@ private fun ProfilePanel(controller: ResumeGameController) {
 }
 
 @Composable
-private fun HeaderCard() {
+private fun HeaderCard(controller: ResumeGameController) {
+    val currentMode = controller.gameState.board.config.mode
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         shape = RoundedCornerShape(28.dp),
@@ -196,31 +196,53 @@ private fun HeaderCard() {
                 modifier = Modifier.testTag("app_title"),
             )
             Text(
-                text = "Classic Easy is live now. Long-press cells to place flags and keep Trap Tiles reserved for the next milestone.",
+                text = if (currentMode == GameMode.TRAP_TILES) {
+                    "Trap Tiles adds 4 extra trap hazards to the field. Any revealed hazard ends the run."
+                } else {
+                    "Classic Easy is live now. Long-press cells to place flags or switch into Trap Tiles for a harsher board."
+                },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                ModeBadge(label = "Classic Easy", emphasis = true)
-                ModeBadge(label = "Trap Tiles Soon", emphasis = false)
+                ModeToggle(
+                    label = "Classic Easy",
+                    active = currentMode == GameMode.CLASSIC_EASY,
+                    onClick = { controller.switchMode(GameMode.CLASSIC_EASY) },
+                )
+                ModeToggle(
+                    label = "Trap Tiles",
+                    active = currentMode == GameMode.TRAP_TILES,
+                    onClick = { controller.switchMode(GameMode.TRAP_TILES) },
+                )
             }
         }
     }
 }
 
 @Composable
-private fun ModeBadge(
+private fun ModeToggle(
     label: String,
-    emphasis: Boolean,
+    active: Boolean,
+    onClick: () -> Unit,
 ) {
+    if (active) {
+        Button(onClick = onClick) {
+            Text(text = label)
+        }
+    } else {
+        OutlinedButton(onClick = onClick) {
+            Text(text = label)
+        }
+    }
+}
+
+@Composable
+private fun AchievementBadge(label: String) {
     Box(
         modifier = Modifier
             .background(
-                color = if (emphasis) {
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
-                } else {
-                    MaterialTheme.colorScheme.surface
-                },
+                color = MaterialTheme.colorScheme.surfaceVariant,
                 shape = RoundedCornerShape(999.dp),
             )
             .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -228,7 +250,7 @@ private fun ModeBadge(
         Text(
             text = label,
             style = MaterialTheme.typography.labelLarge,
-            color = if (emphasis) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -237,7 +259,7 @@ private fun ModeBadge(
 private fun StatusPanel(controller: ResumeGameController) {
     val gameState = controller.gameState
     val flaggedCount = gameState.allCellStates.count { it.visibility == CellVisibility.FLAGGED }
-    val remainingMines = gameState.board.config.mineCount - flaggedCount
+    val remainingMines = gameState.board.config.mineCount + gameState.board.config.trapCount - flaggedCount
     val statusTitle = when (gameState.status) {
         MatchStatus.ACTIVE -> "Field active"
         MatchStatus.WON -> "Field cleared"
@@ -433,6 +455,7 @@ private fun tileLabel(state: GameCellState): String = when (state.visibility) {
     CellVisibility.FLAGGED -> "F"
     CellVisibility.REVEALED -> when {
         state.cell.hazard == CellHazard.MINE -> "X"
+        state.cell.hazard == CellHazard.TRAP -> "!"
         state.cell.adjacentMineCount == 0 -> ""
         else -> state.cell.adjacentMineCount.toString()
     }
@@ -446,6 +469,8 @@ private fun tileDescription(state: GameCellState): String {
         CellVisibility.REVEALED -> when {
             state.cell.hazard == CellHazard.MINE && state.isDetonated -> "Detonated mine at $coordinate"
             state.cell.hazard == CellHazard.MINE -> "Mine at $coordinate"
+            state.cell.hazard == CellHazard.TRAP && state.isDetonated -> "Triggered trap tile at $coordinate"
+            state.cell.hazard == CellHazard.TRAP -> "Trap tile at $coordinate"
             state.cell.adjacentMineCount == 0 -> "Empty revealed tile at $coordinate"
             else -> "Revealed tile at $coordinate with ${state.cell.adjacentMineCount} nearby mines"
         }

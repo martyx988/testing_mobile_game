@@ -52,6 +52,10 @@ data class MinefieldBoard(
         .filter { it.hazard == CellHazard.MINE }
         .map { it.coordinate }
         .toSet()
+    val trapCoordinates: Set<Coordinate> = allCells
+        .filter { it.hazard == CellHazard.TRAP }
+        .map { it.coordinate }
+        .toSet()
 
     fun cellAt(coordinate: Coordinate): BoardCell {
         require(coordinate.row in 0 until rows) { "row out of bounds: ${coordinate.row}" }
