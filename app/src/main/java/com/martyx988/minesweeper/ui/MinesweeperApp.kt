@@ -38,6 +38,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.martyx988.minesweeper.domain.AppScaffoldConfig
+import com.martyx988.minesweeper.domain.AchievementId
+import com.martyx988.minesweeper.domain.AppThemeChoice
 import com.martyx988.minesweeper.domain.CellHazard
 import com.martyx988.minesweeper.domain.CellVisibility
 import com.martyx988.minesweeper.domain.ClassicBoardPresets
@@ -45,6 +47,7 @@ import com.martyx988.minesweeper.domain.Coordinate
 import com.martyx988.minesweeper.domain.GameCellState
 import com.martyx988.minesweeper.domain.GameMode
 import com.martyx988.minesweeper.domain.MatchStatus
+import com.martyx988.minesweeper.data.SharedPreferencesPlayerProfileStore
 import com.martyx988.minesweeper.data.SharedPreferencesSessionSnapshotStore
 import com.martyx988.minesweeper.ui.theme.MinesweeperTheme
 import kotlin.random.Random
@@ -55,12 +58,13 @@ internal fun MinesweeperApp() {
     val controller = remember {
         ResumeGameController(
             storage = SharedPreferencesSessionSnapshotStore(context),
+            profileStore = SharedPreferencesPlayerProfileStore(context),
             initialConfig = ClassicBoardPresets.easy(seed = Random.nextLong()),
             nextSeed = { Random.nextLong() },
         )
     }
 
-    MinesweeperTheme {
+    MinesweeperTheme(themeChoice = controller.playerProfile.settings.themeChoice) {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background,
@@ -79,6 +83,7 @@ internal fun MinesweeperApp() {
                     HeaderCard()
                     StatusPanel(controller = controller)
                     GameBoardCard(controller = controller)
+                    ProfilePanel(controller = controller)
                     FooterPanel(controller = controller)
                 }
             }
@@ -115,6 +120,61 @@ internal fun MinesweeperApp() {
                     }
                 },
             )
+        }
+    }
+}
+
+@Composable
+private fun ProfilePanel(controller: ResumeGameController) {
+    val profile = controller.playerProfile
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(24.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = "Profile",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = "Wins ${profile.stats.wins}  |  Losses ${profile.stats.losses}  |  Flags ${profile.stats.flagsPlaced}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                profile.achievements.sortedBy { it.name }.forEach { achievement ->
+                    ModeBadge(label = achievementLabel(achievement), emphasis = false)
+                }
+                if (profile.achievements.isEmpty()) {
+                    Text(
+                        text = "No achievements yet",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            Button(
+                onClick = controller::cycleTheme,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Theme: ${profile.playerThemeLabel()}")
+            }
+            OutlinedButton(
+                onClick = { controller.setHapticsEnabled(!profile.settings.hapticsEnabled) },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    if (profile.settings.hapticsEnabled) {
+                        "Haptics: On"
+                    } else {
+                        "Haptics: Off"
+                    },
+                )
+            }
         }
     }
 }
@@ -398,6 +458,18 @@ private fun numberColor(number: Int) = when (number) {
     2 -> MaterialTheme.colorScheme.secondary
     3 -> MaterialTheme.colorScheme.tertiary
     else -> MaterialTheme.colorScheme.onSurface
+}
+
+private fun achievementLabel(achievement: AchievementId): String = when (achievement) {
+    AchievementId.FIRST_WIN -> "First Win"
+    AchievementId.FIRST_LOSS -> "First Loss"
+    AchievementId.FIRST_FLAG -> "First Flag"
+}
+
+private fun com.martyx988.minesweeper.domain.PlayerProfile.playerThemeLabel(): String = when (settings.themeChoice) {
+    AppThemeChoice.CLASSIC -> "Classic"
+    AppThemeChoice.FOREST -> "Forest"
+    AppThemeChoice.SUNSET -> "Sunset"
 }
 
 @Preview(showBackground = true)

@@ -21,6 +21,7 @@ class ResumeGameControllerTest {
 
         val controller = ResumeGameController(
             storage = store,
+            profileStore = NoOpPlayerProfileStore,
             initialConfig = ClassicBoardPresets.easy(seed = 20L),
             nextSeed = { 21L },
         )
@@ -36,6 +37,7 @@ class ResumeGameControllerTest {
         )
         val controller = ResumeGameController(
             storage = store,
+            profileStore = NoOpPlayerProfileStore,
             initialConfig = ClassicBoardPresets.easy(seed = 20L),
             nextSeed = { 21L },
         )
@@ -55,6 +57,7 @@ class ResumeGameControllerTest {
         )
         val controller = ResumeGameController(
             storage = store,
+            profileStore = NoOpPlayerProfileStore,
             initialConfig = ClassicBoardPresets.easy(seed = 20L),
             nextSeed = { 21L },
         )
@@ -77,6 +80,7 @@ class ResumeGameControllerTest {
 
         val controller = ResumeGameController(
             storage = store,
+            profileStore = NoOpPlayerProfileStore,
             initialConfig = ClassicBoardPresets.easy(seed = 20L),
             nextSeed = { 21L },
         )
@@ -101,4 +105,11 @@ private class FakeSessionSnapshotStore(
     override fun clear() {
         wasCleared = true
     }
+}
+
+private object NoOpPlayerProfileStore : com.martyx988.minesweeper.data.PlayerProfileStore {
+    override fun load(): com.martyx988.minesweeper.domain.PlayerProfile =
+        com.martyx988.minesweeper.domain.PlayerProfile()
+
+    override fun save(profile: com.martyx988.minesweeper.domain.PlayerProfile) = Unit
 }

@@ -3,19 +3,24 @@ package com.martyx988.minesweeper.ui
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.martyx988.minesweeper.data.PlayerProfileStore
 import com.martyx988.minesweeper.data.SessionSnapshotStore
 import com.martyx988.minesweeper.data.SnapshotLoadResult
 import com.martyx988.minesweeper.domain.BoardConfig
+import com.martyx988.minesweeper.domain.CellVisibility
 import com.martyx988.minesweeper.domain.ClassicBoardPresets
 import com.martyx988.minesweeper.domain.ClassicGameEngine
 import com.martyx988.minesweeper.domain.ClassicGameSnapshot
 import com.martyx988.minesweeper.domain.ClassicGameState
 import com.martyx988.minesweeper.domain.Coordinate
 import com.martyx988.minesweeper.domain.MatchStatus
+import com.martyx988.minesweeper.domain.PlayerProfile
+import com.martyx988.minesweeper.domain.PlayerProfileManager
 import kotlin.random.Random
 
 class ResumeGameController(
     private val storage: SessionSnapshotStore,
+    private val profileStore: PlayerProfileStore,
     initialConfig: BoardConfig = ClassicBoardPresets.easy(seed = Random.nextLong()),
     private val nextSeed: () -> Long = { Random.nextLong() },
 ) {
@@ -30,6 +35,9 @@ class ResumeGameController(
     var resumeNotice by mutableStateOf<String?>(null)
         private set
 
+    var playerProfile by mutableStateOf(profileStore.load())
+        private set
+
     init {
         when (val result = storage.load()) {
             is SnapshotLoadResult.Available -> pendingResumeSnapshot = result.snapshot
@@ -42,12 +50,21 @@ class ResumeGameController(
     }
 
     fun reveal(coordinate: Coordinate) {
+        val previousStatus = gameState.status
         gameState = ClassicGameEngine.reveal(gameState, coordinate)
+        recordCompletionIfNeeded(previousStatus)
         syncSnapshotAfterInteraction()
     }
 
     fun toggleFlag(coordinate: Coordinate) {
+        val previousVisibility = gameState.cellStateAt(coordinate).visibility
         gameState = ClassicGameEngine.toggleFlag(gameState, coordinate)
+        if (previousVisibility != gameState.cellStateAt(coordinate).visibility &&
+            gameState.cellStateAt(coordinate).visibility == CellVisibility.FLAGGED
+        ) {
+            playerProfile = PlayerProfileManager.recordFlagPlaced(playerProfile)
+            persistProfile()
+        }
         syncSnapshotAfterInteraction()
     }
 
@@ -77,6 +94,16 @@ class ResumeGameController(
         resumeNotice = null
     }
 
+    fun cycleTheme() {
+        playerProfile = PlayerProfileManager.cycleTheme(playerProfile)
+        persistProfile()
+    }
+
+    fun setHapticsEnabled(enabled: Boolean) {
+        playerProfile = PlayerProfileManager.setHapticsEnabled(playerProfile, enabled)
+        persistProfile()
+    }
+
     private fun syncSnapshotAfterInteraction() {
         when (gameState.status) {
             MatchStatus.ACTIVE -> storage.save(ClassicGameEngine.snapshot(gameState))
@@ -84,5 +111,19 @@ class ResumeGameController(
             MatchStatus.LOST,
             -> storage.clear()
         }
+    }
+
+    private fun recordCompletionIfNeeded(previousStatus: MatchStatus) {
+        if (previousStatus == MatchStatus.ACTIVE && gameState.status != MatchStatus.ACTIVE) {
+            playerProfile = PlayerProfileManager.recordGameFinished(
+                current = playerProfile,
+                result = gameState.status,
+            )
+            persistProfile()
+        }
+    }
+
+    private fun persistProfile() {
+        profileStore.save(playerProfile)
     }
 }

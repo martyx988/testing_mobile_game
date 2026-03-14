@@ -19,10 +19,16 @@ Milestone 4: Local persistence for resume, stats, achievements, settings, and th
 - Theme and settings values save and restore correctly
 
 ## Progress Log
-- Task planned
+- Added player profile models for stats, achievements, theme choice, and haptics settings
+- Added SharedPreferences-backed profile persistence separate from active-session snapshots
+- Extended the main app controller to persist achievements and profile settings
+- Applied the selected theme across the app and surfaced profile/settings controls in the UI
 
 ## Validation Results
-- Not started
+- `./gradlew test -Pandroid.builder.sdkDownload=false` passed
+- `./gradlew lint -Pandroid.builder.sdkDownload=false` passed
+- `./gradlew assembleDebug -Pandroid.builder.sdkDownload=false` passed
+- Stats, achievements, theme cycle, and haptics preference tests pass
 
 ## Final Summary
-- Pending implementation
+- Player progress and app preferences now persist locally and are visible in the app UI
