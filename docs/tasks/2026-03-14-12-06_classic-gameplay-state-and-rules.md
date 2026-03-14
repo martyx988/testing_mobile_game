@@ -20,10 +20,14 @@ Milestone 2: Classic `Easy` game engine with tests
 - Win/loss detection and restart reset behavior
 
 ## Progress Log
-- Task planned
+- Added a pure classic game engine on top of the deterministic board model
+- Implemented reveal handling for numbered cells and zero-cell flood fill
+- Implemented flag toggling, mine-loss handling, win detection, and deterministic restart
+- Kept the game-state API platform-agnostic for future persistence and UI wiring
 
 ## Validation Results
-- Not started
+- `./gradlew test -Pandroid.builder.sdkDownload=false` passed
+- Gameplay tests cover reveal behavior, flood fill, flagging, end-state lockout, win/loss, and restart
 
 ## Final Summary
-- Pending implementation
+- Classic gameplay state transitions are complete and ready for UI integration
