@@ -37,6 +37,9 @@ class ResumeGameController(
     var resumeNotice by mutableStateOf<String?>(null)
         private set
 
+    var isHelpOpen by mutableStateOf(false)
+        private set
+
     var playerProfile by mutableStateOf(profileStore.load())
         private set
 
@@ -95,6 +98,14 @@ class ResumeGameController(
 
     fun dismissResumeNotice() {
         resumeNotice = null
+    }
+
+    fun openHelp() {
+        isHelpOpen = true
+    }
+
+    fun closeHelp() {
+        isHelpOpen = false
     }
 
     fun cycleTheme() {

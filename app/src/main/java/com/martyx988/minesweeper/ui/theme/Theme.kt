@@ -60,6 +60,6 @@ internal fun MinesweeperTheme(
 }
 
 private object ColorTokens {
-    val surfaceVariant = MineFog.copy(alpha = 0.88f)
-    val onSurfaceVariant = MineCharcoal.copy(alpha = 0.72f)
+    val surfaceVariant = Color(0xFFE2D7C3)
+    val onSurfaceVariant = MineCharcoal.copy(alpha = 0.86f)
 }

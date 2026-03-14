@@ -10,6 +10,8 @@
 - Active matches can now be saved locally and resumed from an app-launch prompt
 - Local stats, achievements, theme choice, and haptics settings now persist across launches
 - Trap Tiles is now a playable experimental mode with its own deterministic board setup
+- Lightweight in-app tutorial/help content is now available from the first screen
+- Core accessibility polish is in place: scrolling for larger text, non-color board legends, stronger Classic theme contrast, and verified help flow on-device
 
 ## Approved Decisions
 - Native Android app using Kotlin and Jetpack Compose
@@ -23,7 +25,8 @@
 - Milestone 3 complete: Compose game screen and interaction flow
 - Milestone 4 complete: persistence, resume flow, settings, and themes
 - Milestone 5 complete: Trap Tiles experimental mode
-- Next active task: tutorial, accessibility, and release polish
+- Milestone 6 complete: tutorial, accessibility pass, QA expansion, and release polish
+- Initiative status: all planned v1 tasks are complete
 
 ## Validation Status
 - Unit test harness added
@@ -37,7 +40,9 @@
 - Snapshot codec and resume-controller tests pass
 - Player profile, achievement, theme, and settings tests pass
 - Trap Tiles engine and mode-switch tests pass
+- Emulator-backed Compose UI tests pass, including the tutorial entry flow
+- Final validation pass completed with `test`, `lint`, `assembleDebug`, `connectedDebugAndroidTest`, and `installDebug`
 
 ## Follow-Ups
 - Add harder classic difficulties after v1
-- Finish the help flow, accessibility pass, and final polish next
+- Consider a dedicated first-launch onboarding path if a future version expands beyond the lightweight help dialog

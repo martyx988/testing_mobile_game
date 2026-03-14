@@ -7,18 +7,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -26,9 +26,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -36,8 +36,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.martyx988.minesweeper.data.SharedPreferencesPlayerProfileStore
+import com.martyx988.minesweeper.data.SharedPreferencesSessionSnapshotStore
 import com.martyx988.minesweeper.domain.AppScaffoldConfig
-import com.martyx988.minesweeper.domain.AchievementId
 import com.martyx988.minesweeper.domain.AppThemeChoice
 import com.martyx988.minesweeper.domain.CellHazard
 import com.martyx988.minesweeper.domain.CellVisibility
@@ -46,8 +47,8 @@ import com.martyx988.minesweeper.domain.Coordinate
 import com.martyx988.minesweeper.domain.GameCellState
 import com.martyx988.minesweeper.domain.GameMode
 import com.martyx988.minesweeper.domain.MatchStatus
-import com.martyx988.minesweeper.data.SharedPreferencesPlayerProfileStore
-import com.martyx988.minesweeper.data.SharedPreferencesSessionSnapshotStore
+import com.martyx988.minesweeper.domain.PlayerProfile
+import com.martyx988.minesweeper.domain.AchievementId
 import com.martyx988.minesweeper.ui.theme.MinesweeperTheme
 import kotlin.random.Random
 
@@ -76,7 +77,8 @@ internal fun MinesweeperApp() {
                         .fillMaxSize()
                         .padding(padding)
                         .statusBarsPadding()
-                        .padding(horizontal = 18.dp, vertical = 14.dp),
+                        .padding(horizontal = 18.dp, vertical = 14.dp)
+                        .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     HeaderCard(controller = controller)
@@ -86,6 +88,10 @@ internal fun MinesweeperApp() {
                     FooterPanel(controller = controller)
                 }
             }
+        }
+
+        if (controller.isHelpOpen) {
+            TutorialDialog(onDismiss = controller::closeHelp)
         }
 
         if (controller.pendingResumeSnapshot != null) {
@@ -124,61 +130,6 @@ internal fun MinesweeperApp() {
 }
 
 @Composable
-private fun ProfilePanel(controller: ResumeGameController) {
-    val profile = controller.playerProfile
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(24.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                text = "Profile",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = "Wins ${profile.stats.wins}  |  Losses ${profile.stats.losses}  |  Flags ${profile.stats.flagsPlaced}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                profile.achievements.sortedBy { it.name }.forEach { achievement ->
-                    AchievementBadge(label = achievementLabel(achievement))
-                }
-                if (profile.achievements.isEmpty()) {
-                    Text(
-                        text = "No achievements yet",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            Button(
-                onClick = controller::cycleTheme,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Theme: ${profile.playerThemeLabel()}")
-            }
-            OutlinedButton(
-                onClick = { controller.setHapticsEnabled(!profile.settings.hapticsEnabled) },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    if (profile.settings.hapticsEnabled) {
-                        "Haptics: On"
-                    } else {
-                        "Haptics: Off"
-                    },
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun HeaderCard(controller: ResumeGameController) {
     val currentMode = controller.gameState.board.config.mode
     Card(
@@ -196,8 +147,13 @@ private fun HeaderCard(controller: ResumeGameController) {
                 modifier = Modifier.testTag("app_title"),
             )
             Text(
+                text = "Choose a board style",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
                 text = if (currentMode == GameMode.TRAP_TILES) {
-                    "Trap Tiles adds 4 extra trap hazards to the field. Any revealed hazard ends the run."
+                    "Trap Tiles adds 4 extra trap hazards. Numbers still warn about nearby hazards, but any revealed hazard ends the run."
                 } else {
                     "Classic Easy is live now. Long-press cells to place flags or switch into Trap Tiles for a harsher board."
                 },
@@ -215,6 +171,14 @@ private fun HeaderCard(controller: ResumeGameController) {
                     active = currentMode == GameMode.TRAP_TILES,
                     onClick = { controller.switchMode(GameMode.TRAP_TILES) },
                 )
+            }
+            OutlinedButton(
+                onClick = controller::openHelp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("help_button"),
+            ) {
+                Text("How to Play")
             }
         }
     }
@@ -238,57 +202,44 @@ private fun ModeToggle(
 }
 
 @Composable
-private fun AchievementBadge(label: String) {
-    Box(
-        modifier = Modifier
-            .background(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(999.dp),
-            )
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
 private fun StatusPanel(controller: ResumeGameController) {
     val gameState = controller.gameState
+    val currentMode = gameState.board.config.mode
     val flaggedCount = gameState.allCellStates.count { it.visibility == CellVisibility.FLAGGED }
-    val remainingMines = gameState.board.config.mineCount + gameState.board.config.trapCount - flaggedCount
+    val remainingHazards = gameState.board.config.mineCount + gameState.board.config.trapCount - flaggedCount
     val statusTitle = when (gameState.status) {
         MatchStatus.ACTIVE -> "Field active"
         MatchStatus.WON -> "Field cleared"
-        MatchStatus.LOST -> "Mine triggered"
+        MatchStatus.LOST -> if (currentMode == GameMode.TRAP_TILES) "Hazard triggered" else "Mine triggered"
     }
     val statusBody = when (gameState.status) {
-        MatchStatus.ACTIVE -> "Tap to reveal, long-press to flag."
+        MatchStatus.ACTIVE -> if (currentMode == GameMode.TRAP_TILES) {
+            "Tap to reveal, long-press to flag. Mines and traps both count as hazards."
+        } else {
+            "Tap to reveal, long-press to flag."
+        }
         MatchStatus.WON -> "You cleared every safe tile."
-        MatchStatus.LOST -> "All mines are shown. Restart for a new board."
+        MatchStatus.LOST -> if (currentMode == GameMode.TRAP_TILES) {
+            "Revealed hazards are shown with X for mines and ! for traps. Restart for a new board."
+        } else {
+            "All mines are shown. Restart for a new board."
+        }
     }
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         StatCard(
             modifier = Modifier.fillMaxWidth(),
             label = "Status",
             value = statusTitle,
             supporting = statusBody,
         )
+        StatCard(
+            modifier = Modifier.fillMaxWidth(),
+            label = if (currentMode == GameMode.TRAP_TILES) "Hazards Left" else "Mines Left",
+            value = remainingHazards.toString(),
+            supporting = "Flags: $flaggedCount | Symbols stay readable without color.",
+        )
     }
-    Spacer(modifier = Modifier.height(12.dp))
-    StatCard(
-        modifier = Modifier.fillMaxWidth(),
-        label = "Mines Left",
-        value = remainingMines.toString(),
-        supporting = "Flags: $flaggedCount",
-    )
 }
 
 @Composable
@@ -402,8 +353,7 @@ private fun BoardTile(
             .background(
                 color = background,
                 shape = RoundedCornerShape(14.dp),
-            )
-            .height(40.dp),
+            ),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -417,37 +367,176 @@ private fun BoardTile(
 }
 
 @Composable
-private fun FooterPanel(controller: ResumeGameController) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+private fun ProfilePanel(controller: ResumeGameController) {
+    val profile = controller.playerProfile
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(24.dp),
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = "Profile",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = "Wins ${profile.stats.wins}  |  Losses ${profile.stats.losses}  |  Flags ${profile.stats.flagsPlaced}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                profile.achievements.sortedBy { it.name }.forEach { achievement ->
+                    AchievementBadge(label = achievementLabel(achievement))
+                }
+                if (profile.achievements.isEmpty()) {
+                    Text(
+                        text = "No achievements yet",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            Button(
+                onClick = controller::cycleTheme,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Theme: ${profile.playerThemeLabel()}")
+            }
+            OutlinedButton(
+                onClick = { controller.setHapticsEnabled(!profile.settings.hapticsEnabled) },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    if (profile.settings.hapticsEnabled) {
+                        "Haptics: On"
+                    } else {
+                        "Haptics: Off"
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AchievementBadge(label: String) {
+    Box(
+        modifier = Modifier
+            .background(
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shape = RoundedCornerShape(999.dp),
+            )
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun FooterPanel(controller: ResumeGameController) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(24.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            Text(
+                text = "Actions",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
             Button(
-                onClick = { controller.restart() },
+                onClick = controller::restart,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("New Board")
             }
             OutlinedButton(
-                onClick = { controller.restartWithCurrentSeed() },
+                onClick = controller::restartWithCurrentSeed,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("Replay Seed")
             }
+            Text(
+                text = "Seed ${controller.gameState.board.config.seed}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = "Legend: F = flagged tile, X = revealed mine, ! = revealed trap. Color is never required to read the board.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
+}
 
-    Spacer(modifier = Modifier.height(4.dp))
-
-    Text(
-        text = "Seed ${controller.gameState.board.config.seed}  |  Long-press to place a flag",
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+@Composable
+private fun TutorialDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "How to play",
+                modifier = Modifier.testTag("help_dialog_title"),
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.testTag("help_dialog"),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                TutorialSection(
+                    title = "Classic Easy",
+                    body = "Clear every safe tile. Numbers show how many hazards touch that tile.",
+                )
+                TutorialSection(
+                    title = "Trap Tiles",
+                    body = "This mode adds 4 trap hazards. Revealing either a mine or a trap ends the run.",
+                )
+                TutorialSection(
+                    title = "Controls",
+                    body = "Tap to reveal, long-press to flag, and use Replay Seed to retry the same layout.",
+                )
+                TutorialSection(
+                    title = "Accessible symbols",
+                    body = "F means flagged, X means revealed mine, and ! means revealed trap. The board stays readable without relying on color.",
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismiss) {
+                Text("Back to Game")
+            }
+        },
     )
+}
+
+@Composable
+private fun TutorialSection(title: String, body: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            text = body,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
 
 private fun tileLabel(state: GameCellState): String = when (state.visibility) {
@@ -491,7 +580,7 @@ private fun achievementLabel(achievement: AchievementId): String = when (achieve
     AchievementId.FIRST_FLAG -> "First Flag"
 }
 
-private fun com.martyx988.minesweeper.domain.PlayerProfile.playerThemeLabel(): String = when (settings.themeChoice) {
+private fun PlayerProfile.playerThemeLabel(): String = when (settings.themeChoice) {
     AppThemeChoice.CLASSIC -> "Classic"
     AppThemeChoice.FOREST -> "Forest"
     AppThemeChoice.SUNSET -> "Sunset"
