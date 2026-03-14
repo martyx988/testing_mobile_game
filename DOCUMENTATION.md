@@ -13,6 +13,7 @@
 - Lightweight in-app tutorial/help content is now available from the first screen
 - Core accessibility polish is in place: scrolling for larger text, non-color board legends, stronger Classic theme contrast, and verified help flow on-device
 - Build tooling has been aligned to AGP `9.0.0` and Gradle `9.1.0` for broader Android Studio compatibility
+- Post-v1 UI polish fixes landed: the board now fits within screen width, the `Actions` panel sits directly below the board, hidden tiles contrast more clearly against revealed empty tiles, and the end-of-round hazard count preserves the last active value
 
 ## Approved Decisions
 - Native Android app using Kotlin and Jetpack Compose
@@ -44,6 +45,7 @@
 - Emulator-backed Compose UI tests pass, including the tutorial entry flow
 - Final validation pass completed with `test`, `lint`, `assembleDebug`, `connectedDebugAndroidTest`, and `installDebug`
 - Post-release compatibility validation passed after downgrading the build toolchain to AGP `9.0.0`
+- Follow-up UI/layout regression checks passed after the board/order/hazard-count polish update
 
 ## Follow-Ups
 - Add harder classic difficulties after v1

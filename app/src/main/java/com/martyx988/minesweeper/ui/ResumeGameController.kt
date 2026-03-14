@@ -40,6 +40,9 @@ class ResumeGameController(
     var isHelpOpen by mutableStateOf(false)
         private set
 
+    var displayedHazardCount by mutableStateOf(hazardCountFor(gameState))
+        private set
+
     var playerProfile by mutableStateOf(profileStore.load())
         private set
 
@@ -55,8 +58,14 @@ class ResumeGameController(
     }
 
     fun reveal(coordinate: Coordinate) {
+        val lastActiveHazardCount = displayedHazardCount
         val previousStatus = gameState.status
         gameState = ClassicGameEngine.reveal(gameState, coordinate)
+        if (gameState.status == MatchStatus.ACTIVE) {
+            syncDisplayedCountsFromState()
+        } else {
+            displayedHazardCount = lastActiveHazardCount
+        }
         recordCompletionIfNeeded(previousStatus)
         syncSnapshotAfterInteraction()
     }
@@ -70,16 +79,19 @@ class ResumeGameController(
             playerProfile = PlayerProfileManager.recordFlagPlaced(playerProfile)
             persistProfile()
         }
+        syncDisplayedCountsFromState()
         syncSnapshotAfterInteraction()
     }
 
     fun restart() {
         gameState = ClassicGameEngine.start(configFactory(currentMode, nextSeed()))
+        syncDisplayedCountsFromState()
         syncSnapshotAfterInteraction()
     }
 
     fun restartWithCurrentSeed() {
         gameState = ClassicGameEngine.start(configFactory(currentMode, gameState.board.config.seed))
+        syncDisplayedCountsFromState()
         syncSnapshotAfterInteraction()
     }
 
@@ -88,6 +100,7 @@ class ResumeGameController(
         gameState = ClassicGameEngine.restore(snapshot)
         currentMode = snapshot.config.mode
         pendingResumeSnapshot = null
+        syncDisplayedCountsFromState()
         syncSnapshotAfterInteraction()
     }
 
@@ -121,7 +134,12 @@ class ResumeGameController(
     fun switchMode(mode: GameMode) {
         currentMode = mode
         gameState = ClassicGameEngine.start(configFactory(mode, nextSeed()))
+        syncDisplayedCountsFromState()
         syncSnapshotAfterInteraction()
+    }
+
+    private fun syncDisplayedCountsFromState() {
+        displayedHazardCount = hazardCountFor(gameState)
     }
 
     private fun syncSnapshotAfterInteraction() {
@@ -148,6 +166,10 @@ class ResumeGameController(
     }
 
     private companion object {
+        fun hazardCountFor(state: com.martyx988.minesweeper.domain.ClassicGameState): Int =
+            state.board.config.mineCount + state.board.config.trapCount -
+                state.allCellStates.count { it.visibility == CellVisibility.FLAGGED }
+
         fun defaultConfigForMode(
             mode: GameMode,
             seed: Long,

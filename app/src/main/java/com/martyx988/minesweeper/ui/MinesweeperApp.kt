@@ -1,6 +1,7 @@
 package com.martyx988.minesweeper.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -84,8 +85,8 @@ internal fun MinesweeperApp() {
                     HeaderCard(controller = controller)
                     StatusPanel(controller = controller)
                     GameBoardCard(controller = controller)
-                    ProfilePanel(controller = controller)
                     FooterPanel(controller = controller)
+                    ProfilePanel(controller = controller)
                 }
             }
         }
@@ -206,7 +207,6 @@ private fun StatusPanel(controller: ResumeGameController) {
     val gameState = controller.gameState
     val currentMode = gameState.board.config.mode
     val flaggedCount = gameState.allCellStates.count { it.visibility == CellVisibility.FLAGGED }
-    val remainingHazards = gameState.board.config.mineCount + gameState.board.config.trapCount - flaggedCount
     val statusTitle = when (gameState.status) {
         MatchStatus.ACTIVE -> "Field active"
         MatchStatus.WON -> "Field cleared"
@@ -236,7 +236,7 @@ private fun StatusPanel(controller: ResumeGameController) {
         StatCard(
             modifier = Modifier.fillMaxWidth(),
             label = if (currentMode == GameMode.TRAP_TILES) "Hazards Left" else "Mines Left",
-            value = remainingHazards.toString(),
+            value = controller.displayedHazardCount.toString(),
             supporting = "Flags: $flaggedCount | Symbols stay readable without color.",
         )
     }
@@ -284,34 +284,37 @@ private fun GameBoardCard(controller: ResumeGameController) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(28.dp),
     ) {
-        BoxWithConstraints {
-            val cellSpacing = 8.dp
-            val columns = gameState.board.columns
-            val totalSpacing = cellSpacing * (columns - 1)
-            val cellSize = (maxWidth - totalSpacing) / columns
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(
+                text = "Board",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val columns = gameState.board.columns
+                val cellSpacing = when {
+                    maxWidth < 280.dp -> 3.dp
+                    maxWidth < 340.dp -> 5.dp
+                    else -> 8.dp
+                }
+                val totalSpacing = cellSpacing * (columns - 1)
+                val cellSize = (maxWidth - totalSpacing) / columns
 
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Text(
-                    text = "Board",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                gameState.board.cells.forEach { row ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(cellSpacing),
-                    ) {
-                        row.forEach { cell ->
-                            val cellState = gameState.cellStateAt(cell.coordinate)
-                            BoardTile(
-                                state = cellState,
-                                onReveal = { controller.reveal(cell.coordinate) },
-                                onToggleFlag = { controller.toggleFlag(cell.coordinate) },
-                                modifier = Modifier.size(cellSize),
-                            )
+                Column(verticalArrangement = Arrangement.spacedBy(cellSpacing)) {
+                    gameState.board.cells.forEach { row ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(cellSpacing)) {
+                            row.forEach { cell ->
+                                val cellState = gameState.cellStateAt(cell.coordinate)
+                                BoardTile(
+                                    state = cellState,
+                                    onReveal = { controller.reveal(cell.coordinate) },
+                                    onToggleFlag = { controller.toggleFlag(cell.coordinate) },
+                                    modifier = Modifier.size(cellSize),
+                                )
+                            }
                         }
                     }
                 }
@@ -327,10 +330,23 @@ private fun BoardTile(
     onToggleFlag: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val tileShape = RoundedCornerShape(
+        when (state.visibility) {
+            CellVisibility.REVEALED -> 10.dp
+            CellVisibility.HIDDEN,
+            CellVisibility.FLAGGED,
+            -> 14.dp
+        },
+    )
     val background = when (state.visibility) {
-        CellVisibility.HIDDEN -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.16f)
-        CellVisibility.FLAGGED -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.28f)
-        CellVisibility.REVEALED -> MaterialTheme.colorScheme.surfaceVariant
+        CellVisibility.HIDDEN -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.30f)
+        CellVisibility.FLAGGED -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.20f)
+        CellVisibility.REVEALED -> MaterialTheme.colorScheme.surface
+    }
+    val borderColor = when (state.visibility) {
+        CellVisibility.HIDDEN -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.50f)
+        CellVisibility.FLAGGED -> MaterialTheme.colorScheme.secondary
+        CellVisibility.REVEALED -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.24f)
     }
     val contentColor = when {
         state.isDetonated -> MaterialTheme.colorScheme.error
@@ -350,9 +366,14 @@ private fun BoardTile(
                 onClick = onReveal,
                 onLongClick = onToggleFlag,
             )
+            .border(
+                width = if (state.visibility == CellVisibility.HIDDEN) 1.5.dp else 1.dp,
+                color = borderColor,
+                shape = tileShape,
+            )
             .background(
                 color = background,
-                shape = RoundedCornerShape(14.dp),
+                shape = tileShape,
             ),
         contentAlignment = Alignment.Center,
     ) {
