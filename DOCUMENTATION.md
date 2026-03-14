@@ -4,6 +4,7 @@
 - Repository planning is being repurposed toward an Android Minesweeper app
 - Android project scaffold has been added
 - Build, unit-test, and lint validation have been completed for the scaffold task
+- Deterministic board generation for classic mode has been implemented
 
 ## Approved Decisions
 - Native Android app using Kotlin and Jetpack Compose
@@ -13,15 +14,16 @@
 
 ## Current Milestone
 - Milestone 1 complete: Android project scaffold and build baseline
-- Next active task: game domain model and board generation
+- Milestone 2 in progress: classic game engine and state rules
 
 ## Validation Status
 - Unit test harness added
 - `test` passed
 - `lint` passed with non-blocking dependency freshness warnings
 - `assembleDebug` passed and produced a debug APK
+- Deterministic board-generation unit tests pass
 
 ## Follow-Ups
 - Add harder classic difficulties after v1
 - Finalize the exact `Trap Tiles` rule contract before coding begins
-- Implement deterministic board generation and adjacency counting next
+- Implement reveal, flag, and win/loss state transitions next

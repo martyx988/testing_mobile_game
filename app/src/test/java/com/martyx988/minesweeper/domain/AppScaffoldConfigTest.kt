@@ -8,8 +8,7 @@ class AppScaffoldConfigTest {
     @Test
     fun supportedModes_containsClassicAndVariantModes() {
         assertEquals(2, AppScaffoldConfig.supportedModes.size)
-        assertTrue(AppScaffoldConfig.supportedModes.contains(SupportedMode.CLASSIC_EASY))
-        assertTrue(AppScaffoldConfig.supportedModes.contains(SupportedMode.TRAP_TILES))
+        assertTrue(AppScaffoldConfig.supportedModes.contains(GameMode.CLASSIC_EASY))
+        assertTrue(AppScaffoldConfig.supportedModes.contains(GameMode.TRAP_TILES))
     }
 }
-

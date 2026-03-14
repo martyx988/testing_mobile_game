@@ -25,7 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.martyx988.minesweeper.domain.AppScaffoldConfig
-import com.martyx988.minesweeper.domain.SupportedMode
+import com.martyx988.minesweeper.domain.GameMode
 import com.martyx988.minesweeper.ui.theme.MinesweeperTheme
 
 @Composable
@@ -111,13 +111,13 @@ private fun ModeCard() {
                 ) {
                     Text(
                         text = when (mode) {
-                            SupportedMode.CLASSIC_EASY -> "Classic Easy"
-                            SupportedMode.TRAP_TILES -> "Trap Tiles"
+                            GameMode.CLASSIC_EASY -> "Classic Easy"
+                            GameMode.TRAP_TILES -> "Trap Tiles"
                         },
                         style = MaterialTheme.typography.bodyLarge,
                     )
                     Text(
-                        text = if (mode == SupportedMode.CLASSIC_EASY) {
+                        text = if (mode == GameMode.CLASSIC_EASY) {
                             "Core"
                         } else {
                             "Variant"

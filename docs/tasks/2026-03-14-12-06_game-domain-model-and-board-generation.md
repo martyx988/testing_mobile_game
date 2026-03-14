@@ -19,10 +19,14 @@ Milestone 2: Classic `Easy` game engine with tests
 - Deterministic output for seeded or otherwise specified generation behavior
 
 ## Progress Log
-- Task planned
+- Added reusable board config, coordinate, mode, hazard, and board models
+- Implemented deterministic seeded mine placement for classic `Easy` boards
+- Added adjacency counting and board-neighbor lookup helpers
+- Updated the scaffold mode config to reuse the shared game-mode enum
 
 ## Validation Results
-- Not started
+- `./gradlew test -Pandroid.builder.sdkDownload=false` passed
+- Board-generation tests cover board shape, mine counts, determinism, and adjacency accuracy
 
 ## Final Summary
-- Pending implementation
+- Deterministic classic board generation is complete and ready for gameplay-state rules
