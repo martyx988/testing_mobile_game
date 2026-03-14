@@ -19,10 +19,16 @@ Milestone 4: Local persistence for resume, stats, achievements, settings, and th
 - Resume prompt display and dismissal behavior
 
 ## Progress Log
-- Task planned
+- Added deterministic snapshot export and restore support on top of the classic game engine
+- Added a local snapshot store abstraction and SharedPreferences-backed Android implementation
+- Added a resume-aware controller that surfaces a restore/discard prompt on launch
+- Wired the main Compose app to the resume flow and corruption notice handling
 
 ## Validation Results
-- Not started
+- `./gradlew test -Pandroid.builder.sdkDownload=false` passed
+- `./gradlew lint -Pandroid.builder.sdkDownload=false` passed
+- `./gradlew assembleDebug -Pandroid.builder.sdkDownload=false` passed
+- Snapshot round-trip, corruption handling, and resume prompt controller tests pass
 
 ## Final Summary
-- Pending implementation
+- Unfinished classic matches can now be restored safely after app restart

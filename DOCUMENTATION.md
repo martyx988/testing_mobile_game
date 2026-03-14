@@ -7,6 +7,7 @@
 - Deterministic board generation for classic mode has been implemented
 - Classic gameplay reveal, flag, win, loss, and restart rules have been implemented
 - A playable Compose game screen is now wired to the classic engine
+- Active matches can now be saved locally and resumed from an app-launch prompt
 
 ## Approved Decisions
 - Native Android app using Kotlin and Jetpack Compose
@@ -18,7 +19,8 @@
 - Milestone 1 complete: Android project scaffold and build baseline
 - Milestone 2 complete: classic game engine and state rules
 - Milestone 3 complete: Compose game screen and interaction flow
-- Next active task: session resume and local storage
+- Milestone 4 in progress: persistence, resume flow, settings, and themes
+- Next active task: player progress, settings, and themes
 
 ## Validation Status
 - Unit test harness added
@@ -29,8 +31,9 @@
 - Classic gameplay engine unit tests pass
 - UI controller tests pass
 - Playable UI build, lint, and debug APK assembly pass
+- Snapshot codec and resume-controller tests pass
 
 ## Follow-Ups
 - Add harder classic difficulties after v1
 - Finalize the exact `Trap Tiles` rule contract before coding begins
-- Persist unfinished matches and restore them with a resume prompt next
+- Add stats, achievements, theme choice, and feedback settings next

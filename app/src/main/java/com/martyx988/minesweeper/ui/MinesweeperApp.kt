@@ -18,13 +18,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -42,13 +45,16 @@ import com.martyx988.minesweeper.domain.Coordinate
 import com.martyx988.minesweeper.domain.GameCellState
 import com.martyx988.minesweeper.domain.GameMode
 import com.martyx988.minesweeper.domain.MatchStatus
+import com.martyx988.minesweeper.data.SharedPreferencesSessionSnapshotStore
 import com.martyx988.minesweeper.ui.theme.MinesweeperTheme
 import kotlin.random.Random
 
 @Composable
 internal fun MinesweeperApp() {
+    val context = LocalContext.current
     val controller = remember {
-        ClassicGameController(
+        ResumeGameController(
+            storage = SharedPreferencesSessionSnapshotStore(context),
             initialConfig = ClassicBoardPresets.easy(seed = Random.nextLong()),
             nextSeed = { Random.nextLong() },
         )
@@ -76,6 +82,39 @@ internal fun MinesweeperApp() {
                     FooterPanel(controller = controller)
                 }
             }
+        }
+
+        if (controller.pendingResumeSnapshot != null) {
+            AlertDialog(
+                onDismissRequest = { },
+                title = { Text("Resume saved game?") },
+                text = {
+                    Text("An unfinished match was found on this device. Resume it or discard it and keep the new board.")
+                },
+                confirmButton = {
+                    Button(onClick = { controller.confirmResume() }) {
+                        Text("Resume")
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(onClick = { controller.dismissResume() }) {
+                        Text("Discard")
+                    }
+                },
+            )
+        }
+
+        controller.resumeNotice?.let { notice ->
+            AlertDialog(
+                onDismissRequest = controller::dismissResumeNotice,
+                title = { Text("Saved game cleared") },
+                text = { Text(notice) },
+                confirmButton = {
+                    Button(onClick = controller::dismissResumeNotice) {
+                        Text("OK")
+                    }
+                },
+            )
         }
     }
 }
@@ -135,7 +174,7 @@ private fun ModeBadge(
 }
 
 @Composable
-private fun StatusPanel(controller: ClassicGameController) {
+private fun StatusPanel(controller: ResumeGameController) {
     val gameState = controller.gameState
     val flaggedCount = gameState.allCellStates.count { it.visibility == CellVisibility.FLAGGED }
     val remainingMines = gameState.board.config.mineCount - flaggedCount
@@ -206,7 +245,7 @@ private fun StatCard(
 }
 
 @Composable
-private fun GameBoardCard(controller: ClassicGameController) {
+private fun GameBoardCard(controller: ResumeGameController) {
     val gameState = controller.gameState
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -296,7 +335,7 @@ private fun BoardTile(
 }
 
 @Composable
-private fun FooterPanel(controller: ClassicGameController) {
+private fun FooterPanel(controller: ResumeGameController) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
