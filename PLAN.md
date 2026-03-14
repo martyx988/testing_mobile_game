@@ -8,6 +8,16 @@
 5. Experimental `Trap Tiles` mode
 6. Polish, accessibility pass, QA expansion, and documentation sync
 
+## Task Breakdown
+1. Android project scaffold and build baseline
+2. Game domain model and board generation
+3. Classic gameplay state, reveal/flag logic, and win/loss rules
+4. Compose game screen and touch interaction flow
+5. Session resume and local game-state persistence
+6. Player progress, settings, and theme storage
+7. Experimental `Trap Tiles` mode implementation
+8. Tutorial/help, accessibility pass, and release polish
+
 ## Sequencing Notes
 - Build deterministic game logic before UI-heavy work
 - Keep classic mode stable before introducing the variant mode

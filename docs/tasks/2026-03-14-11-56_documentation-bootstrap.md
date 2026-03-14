@@ -18,9 +18,11 @@ Milestone 1: Project foundation and Android app architecture
 
 ## Progress Log
 - Created initial planning docs for repo repurpose toward Android Minesweeper
+- Added a small follow-on task backlog for future implementation work
 
 ## Validation Results
 - Documentation-only change; no code validation commands were run
 
 ## Final Summary
 - The repository now has a compact documentation baseline for implementation planning
+- Future implementation tasks are split into focused task files under `docs/tasks/`

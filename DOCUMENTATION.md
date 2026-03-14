@@ -12,11 +12,14 @@
 
 ## Current Milestone
 - Documentation bootstrap
+- Implementation task breakdown created for upcoming milestones
 
 ## Validation Status
 - Planning complete
 - Implementation not started
+- Task backlog documented for future execution
 
 ## Follow-Ups
 - Add harder classic difficulties after v1
 - Finalize the exact `Trap Tiles` rule contract before coding begins
+- Scaffold the Android project and begin Milestone 1 execution
