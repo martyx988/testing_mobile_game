@@ -5,6 +5,7 @@ Native Android Minesweeper built with Kotlin and Jetpack Compose.
 ## Requirements
 - JDK 17
 - Android SDK with API 35 or newer
+- Android Studio with AGP 9.0 support or newer
 
 ## Common Commands
 ```bash
@@ -21,6 +22,9 @@ Native Android Minesweeper built with Kotlin and Jetpack Compose.
 
 ## Local SDK Note
 If Gradle tries to auto-download SDK Platform 36 even though it already exists locally, rerun the command with `-Pandroid.builder.sdkDownload=false`.
+
+## Android Studio Compatibility
+- The project is pinned to AGP `9.0.0` and Gradle `9.1.0` so it can sync in Android Studio builds that do not yet support AGP `9.1.0`.
 
 ## Debug APK
 - Latest debug build output: `app/build/outputs/apk/debug/app-debug.apk`

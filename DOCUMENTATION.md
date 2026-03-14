@@ -12,6 +12,7 @@
 - Trap Tiles is now a playable experimental mode with its own deterministic board setup
 - Lightweight in-app tutorial/help content is now available from the first screen
 - Core accessibility polish is in place: scrolling for larger text, non-color board legends, stronger Classic theme contrast, and verified help flow on-device
+- Build tooling has been aligned to AGP `9.0.0` and Gradle `9.1.0` for broader Android Studio compatibility
 
 ## Approved Decisions
 - Native Android app using Kotlin and Jetpack Compose
@@ -42,6 +43,7 @@
 - Trap Tiles engine and mode-switch tests pass
 - Emulator-backed Compose UI tests pass, including the tutorial entry flow
 - Final validation pass completed with `test`, `lint`, `assembleDebug`, `connectedDebugAndroidTest`, and `installDebug`
+- Post-release compatibility validation passed after downgrading the build toolchain to AGP `9.0.0`
 
 ## Follow-Ups
 - Add harder classic difficulties after v1
